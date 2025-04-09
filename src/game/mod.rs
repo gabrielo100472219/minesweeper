@@ -13,6 +13,7 @@ pub struct Game {
     pub number_of_mines: i32,
     pub board: Vec<Vec<Cell>>,
     pub player_position: Position,
+    pub bombs_placed: bool,
 }
 
 impl Game {
@@ -31,7 +32,8 @@ impl Game {
             height,
             number_of_mines,
             board,
-            player_position: initial_position
+            player_position: initial_position,
+            bombs_placed: false,
         }
     }
 }

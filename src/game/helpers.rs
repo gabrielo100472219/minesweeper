@@ -18,6 +18,15 @@ pub fn get_adjacent_positions(position: Position, max_width: usize, max_height: 
     adjacents
 }
 
+pub fn get_all_positions(max_width: usize, max_height: usize) -> Vec<Position> {
+    let mut positions: Vec<Position> = Vec::new();
+    for i in 0..max_height {
+        for j in 0..max_width {
+            positions.push(Position::new(i as i8, j as i8));
+        }
+    }
+    positions
+}
 
 #[cfg(test)]
 mod tests {
@@ -49,6 +58,12 @@ mod tests {
         let pos = Position::new(0, 0);
         let neighbors = get_adjacent_positions(pos, 1, 1);
         assert_eq!(neighbors.len(), 0);
+    }
+
+    #[test]
+    fn positions_generated_correctly() {
+        let neighbors = get_all_positions(4, 4);
+        assert_eq!(neighbors.len(), 16);
     }
 }
 

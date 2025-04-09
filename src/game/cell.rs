@@ -1,9 +1,9 @@
 #[derive(Clone)]
 pub struct Cell {
-    is_bomb: bool,
-    is_flagged: bool,
-    is_open: bool,
-    adjacent_bombs: i8,
+    pub is_bomb: bool,
+    pub is_flagged: bool,
+    pub is_open: bool,
+    pub adjacent_bombs: i8,
 }
 
 impl Cell {
