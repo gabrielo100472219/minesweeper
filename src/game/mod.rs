@@ -1,5 +1,7 @@
 mod cell;
 mod position;
+pub mod bomb;
+pub mod helpers;
 
 use cell::Cell;
 use position::Position;
