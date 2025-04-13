@@ -87,5 +87,15 @@ impl Game {
         }
     }
 
-    pub fn flag_current_cell() {} 
+    pub fn flag_current_cell(&mut self) {
+        if !self.game_is_active {
+            return;
+        }
+        let x: usize = self.player_position.x.try_into().expect("position x too large");
+        let y: usize = self.player_position.y.try_into().expect("position y too large");
+        if self.board[x][y].is_open {
+            return;
+        }
+        self.board[x][y].is_flagged = !self.board[x][y].is_flagged;
+    } 
 }
