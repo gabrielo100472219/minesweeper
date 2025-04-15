@@ -6,7 +6,8 @@ use rand::seq::SliceRandom;
 use rand::rng;
 
 pub fn generate_bombs(game: &mut Game) {
-    let forbidden_positions = get_adjacent_positions(game.player_position, game.width, game.height);
+    let mut forbidden_positions = get_adjacent_positions(game.player_position, game.width, game.height);
+    forbidden_positions.push(game.player_position);
     let all_positions = get_all_positions(game.width, game.height);
     let forbidden_set: HashSet<Position> = forbidden_positions.iter().cloned().collect();
     let mut valid_positions: Vec<Position> = all_positions
@@ -20,8 +21,9 @@ pub fn generate_bombs(game: &mut Game) {
     for i in 0..num_bombs {
         let x = valid_positions[i].x as usize;
         let y = valid_positions[i].y as usize;
+        let pos = Position::new(x as i8, y as i8);
         game.board[y][x].is_bomb = true;
-        increase_adjacency_count_of_surrounding_cells(game, game.player_position);
+        increase_adjacency_count_of_surrounding_cells(game, pos);
     }
     game.bombs_placed = true;
 }
@@ -31,6 +33,6 @@ fn increase_adjacency_count_of_surrounding_cells(game: &mut Game, position: Posi
     for position in adjacent_positions.iter(){
         let adjacent_x: usize = position.x.try_into().expect("position x too large");
         let adjacent_y: usize = position.y.try_into().expect("position y too large");
-        game.board[adjacent_x][adjacent_y].adjacent_bombs += 1;
+        game.board[adjacent_y][adjacent_x].adjacent_bombs += 1;
     }
-} 
+}
