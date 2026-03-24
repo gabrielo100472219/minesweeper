@@ -1,15 +1,23 @@
-mod cell;
-mod position;
 mod bomb;
+mod cell;
 mod helpers;
-pub mod ui;
 pub mod input;
+mod position;
+pub mod ui;
 
 use cell::Cell;
-use position::Position;
-use std::convert::TryInto;
-use recursive::recursive;
 use helpers::get_adjacent_positions;
+use position::Position;
+use recursive::recursive;
+use std::convert::TryInto;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameState {
+    Playing,
+    Won,
+    Lost,
+    Quit,
+}
 
 pub struct Game {
     width: usize,
@@ -17,33 +25,30 @@ pub struct Game {
     board: Vec<Vec<Cell>>,
     pub player_position: Position,
     bombs_placed: bool,
-    pub game_is_active: bool,
+    pub state: GameState,
     number_of_open_cells: i64,
     total_number_of_cells: i64,
+    number_of_bombs: i64,
 }
 
 impl Game {
     pub fn new(width: usize, height: usize) -> Self {
-        let board: Vec<Vec<Cell>> = (0..height)
-            .map(|_| vec![Cell::new(); width])
-            .collect();
+        let board: Vec<Vec<Cell>> = (0..height).map(|_| vec![Cell::new(); width]).collect();
         let width_i8: i8 = width.try_into().expect("width too large");
         let height_i8: i8 = height.try_into().expect("height too large");
-        let initial_position: Position = Position::new(
-            width_i8/2 - 1,
-            height_i8/2 -1
-        );
+        let initial_position: Position = Position::new(width_i8 / 2 - 1, height_i8 / 2 - 1);
         let number_of_open_cells = 0;
         let total_number_of_cells = width as i64 * height as i64;
-        Self { 
+        Self {
             width,
             height,
             board,
             player_position: initial_position,
             bombs_placed: false,
-            game_is_active: true,
+            state: GameState::Playing,
             total_number_of_cells,
             number_of_open_cells,
+            number_of_bombs: 0,
         }
     }
 
@@ -52,33 +57,69 @@ impl Game {
     }
 
     pub fn open_current_cell(&mut self) {
-        if !self.game_is_active {
+        if self.state != GameState::Playing {
             return;
         }
         if !self.bombs_placed {
             self.generate_bombs();
         }
-        let x: usize = self.player_position.x.try_into().expect("position x too large");
-        let y: usize = self.player_position.y.try_into().expect("position y too large");
+        let x: usize = self
+            .player_position
+            .x
+            .try_into()
+            .expect("position x too large");
+        let y: usize = self
+            .player_position
+            .y
+            .try_into()
+            .expect("position y too large");
         if self.board[y][x].is_open {
             return;
         }
         if self.board[y][x].is_bomb {
-            // Game ends
-            self.game_is_active = false;
+            self.reveal_all_bombs();
+            self.state = GameState::Lost;
             return;
         }
         self.board[y][x].is_open = true;
         self.number_of_open_cells += 1;
-        if (self.board[y][x].adjacent_bombs > 0) {
+        if self.board[y][x].adjacent_bombs > 0 {
+            self.check_win();
             return;
         }
-        let opened_cells = Self::open_adjacent_cells(&mut self.board, self.player_position, self.width, self.height);
+        let opened_cells = Self::open_adjacent_cells(
+            &mut self.board,
+            self.player_position,
+            self.width,
+            self.height,
+        );
         self.number_of_open_cells += opened_cells;
+        self.check_win();
+    }
+
+    fn check_win(&mut self) {
+        if self.number_of_open_cells == self.total_number_of_cells - self.number_of_bombs {
+            self.state = GameState::Won;
+        }
+    }
+
+    fn reveal_all_bombs(&mut self) {
+        for row in self.board.iter_mut() {
+            for cell in row.iter_mut() {
+                if cell.is_bomb {
+                    cell.is_open = true;
+                }
+            }
+        }
     }
 
     #[recursive]
-    fn open_adjacent_cells(board: &mut Vec<Vec<Cell>>, position: Position, width: usize, height: usize) -> i64 {
+    fn open_adjacent_cells(
+        board: &mut Vec<Vec<Cell>>,
+        position: Position,
+        width: usize,
+        height: usize,
+    ) -> i64 {
         let adjacent_positions = get_adjacent_positions(position, width, height);
         let mut opened_cells = 0;
         for position in adjacent_positions.iter() {
@@ -107,16 +148,24 @@ impl Game {
     }
 
     pub fn flag_current_cell(&mut self) {
-        if !self.game_is_active {
+        if self.state != GameState::Playing {
             return;
         }
-        let x: usize = self.player_position.x.try_into().expect("position x too large");
-        let y: usize = self.player_position.y.try_into().expect("position y too large");
+        let x: usize = self
+            .player_position
+            .x
+            .try_into()
+            .expect("position x too large");
+        let y: usize = self
+            .player_position
+            .y
+            .try_into()
+            .expect("position y too large");
         if self.board[y][x].is_open {
             return;
         }
         self.board[y][x].is_flagged = !self.board[y][x].is_flagged;
-    } 
+    }
 }
 
 #[cfg(test)]
@@ -127,7 +176,8 @@ mod tests {
 
     // Helper to count how many cells are open
     fn count_open_cells(board: &Vec<Vec<Cell>>) -> usize {
-        board.iter()
+        board
+            .iter()
             .map(|row| row.iter().filter(|c| c.is_open).count())
             .sum()
     }
@@ -137,7 +187,7 @@ mod tests {
         let game = Game::new(10, 10);
         let middle_pos = Position::new(4, 4); // (width/2 -1, height/2 -1)
         assert_eq!(game.player_position, middle_pos);
-        assert!(game.game_is_active);
+        assert_eq!(game.state, GameState::Playing);
         assert_eq!(game.total_number_of_cells, 100);
         assert_eq!(game.number_of_open_cells, 0);
     }
@@ -162,7 +212,9 @@ mod tests {
         game.open_current_cell();
 
         // First open will generate bombs and open the selected cell
-        assert!(game.board[game.player_position.x as usize][game.player_position.y as usize].is_open);
+        assert!(
+            game.board[game.player_position.x as usize][game.player_position.y as usize].is_open
+        );
         assert!(game.bombs_placed);
 
         // The number of open cells should be greater than zero
@@ -184,7 +236,7 @@ mod tests {
         game.bombs_placed = true;
 
         game.open_current_cell();
-        assert!(!game.game_is_active); // Game should end
+        assert_eq!(game.state, GameState::Lost); // Game should end
     }
 
     #[test]
@@ -220,4 +272,3 @@ mod tests {
         assert!(!game.board[x][y].is_flagged); // Still not flagged
     }
 }
-

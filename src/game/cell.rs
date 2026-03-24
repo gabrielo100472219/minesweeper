@@ -7,7 +7,7 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Self {
             is_bomb: false,
             is_flagged: false,

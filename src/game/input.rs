@@ -1,5 +1,5 @@
-use crossterm::event::KeyCode;
 use crate::game::{Game, Position};
+use crossterm::event::KeyCode;
 
 pub fn handle_input(game: &mut Game, key: KeyCode) {
     let Position { x, y } = game.player_position;

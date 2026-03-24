@@ -1,6 +1,10 @@
 use super::Position;
 
-pub fn get_adjacent_positions(position: Position, max_width: usize, max_height: usize) -> Vec<Position> {
+pub fn get_adjacent_positions(
+    position: Position,
+    max_width: usize,
+    max_height: usize,
+) -> Vec<Position> {
     let mut adjacents: Vec<Position> = Vec::new();
     for dx in -1..=1 {
         for dy in -1..=1 {
@@ -66,4 +70,3 @@ mod tests {
         assert_eq!(neighbors.len(), 16);
     }
 }
-
